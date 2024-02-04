@@ -231,13 +231,52 @@ public abstract class SequentialAccessTestBase
 
         // Test max length
         for (int i = 0; i < bytes.length; i++) {
-            assertEquals("ABCDEFG".substring(0, i), createReader(bytes).getNullTerminatedString(i, Charsets.UTF_8));
+            assertEquals("ABCDEFG".substring(0, i), createReader(bytes).getNullTerminatedString(i, Charsets.UTF_8, false));
         }
 
-        assertEquals("", createReader(new byte[]{0}).getNullTerminatedString(10, Charsets.UTF_8));
-        assertEquals("A", createReader(new byte[]{0x41, 0}).getNullTerminatedString(10, Charsets.UTF_8));
-        assertEquals("AB", createReader(new byte[]{0x41, 0x42, 0}).getNullTerminatedString(10, Charsets.UTF_8));
-        assertEquals("AB", createReader(new byte[]{0x41, 0x42, 0, 0x43}).getNullTerminatedString(10, Charsets.UTF_8));
+        assertEquals("", createReader(new byte[]{0}).getNullTerminatedString(10, Charsets.UTF_8, false));
+        assertEquals("A", createReader(new byte[]{0x41, 0}).getNullTerminatedString(10, Charsets.UTF_8, false));
+        assertEquals("AB", createReader(new byte[]{0x41, 0x42, 0}).getNullTerminatedString(10, Charsets.UTF_8, false));
+        assertEquals("AB", createReader(new byte[]{0x41, 0x42, 0, 0x43}).getNullTerminatedString(10, Charsets.UTF_8, false));
+    }
+
+    @Test
+    public void testGetNullTerminatedString_MoveToMaxLength() throws IOException
+    {
+        byte[] bytes = new byte[]{0x41, 0, 0, 0, 0};
+
+        SequentialReader reader = createReader(bytes);
+        assertEquals("A", reader.getNullTerminatedString(3, Charsets.UTF_8, true));
+        assertEquals(3, reader.getPosition());
+
+        reader = createReader(bytes);
+        assertEquals("A", reader.getNullTerminatedString(3, Charsets.UTF_8, false));
+        assertEquals(2, reader.getPosition());
+
+        reader = createReader(bytes);
+        assertEquals("A", reader.getNullTerminatedString(10, Charsets.UTF_8, false));
+        assertEquals(2, reader.getPosition());
+    }
+
+    @Test
+    public void testGetNullTerminatedStringCursorPositionTest() throws IOException
+    {
+        byte NULL = 0x00;
+        byte[] bytes = new byte[]{0x41, 0x42, NULL, NULL, NULL, 0x43, 0x44, NULL, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46}; //AB\0\0\0CD\0ABCDEF
+        SequentialReader reader = createReader(bytes);
+
+        // try to read first five values
+        assertEquals("AB", reader.getNullTerminatedString(5, Charsets.UTF_8, false));
+
+        // the cursor is after B (third) position
+        assertEquals(reader.getPosition(), 3);
+        reader.skip(2);
+
+        assertEquals("CD", reader.getNullTerminatedString(3, Charsets.UTF_8, false));
+
+        assertEquals(reader.getPosition(), 8);
+        //no need to skip to next position. since there's only one \0 character after "CD"
+        assertEquals("ABCDEF", reader.getNullTerminatedString(6, Charsets.UTF_8, false));
     }
 
     @Test

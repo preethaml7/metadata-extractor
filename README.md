@@ -14,7 +14,7 @@ The easiest way is to install the library via its [Maven package](http://search.
 <dependency>
   <groupId>com.drewnoakes</groupId>
   <artifactId>metadata-extractor</artifactId>
-  <version>2.18.0</version>
+  <version>2.19.0</version>
 </dependency>
 ```
 
@@ -61,6 +61,7 @@ It will process files of type:
 * PNG
 * BMP
 * GIF
+* HEIF / HEIC
 * ICO
 * PCX
 * QuickTime
